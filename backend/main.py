@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+from datetime import datetime
 from pathlib import Path
 from typing import Literal, Optional
 
@@ -8,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from database import Base, engine, get_db
 from importers import file_to_html, ImportError_
+from ai import ai_enabled, run_action, AIError, MAX_INPUT_CHARS, PROMPTS
 from models import User, Document, Share
 from seed import seed_users
 
@@ -228,3 +230,36 @@ async def import_document(
     db.commit()
     db.refresh(doc)
     return detail(doc, "owner")
+
+
+# ---------- AI Assist ----------
+class AssistRequest(BaseModel):
+    action: Literal["summarize", "fix_grammar", "shorten", "professional"]
+    text: str = Field(min_length=1, max_length=MAX_INPUT_CHARS)
+
+
+@app.get("/api/ai/status")
+def ai_status():
+    return {"enabled": ai_enabled(), "actions": list(PROMPTS)}
+
+
+@app.post("/api/ai/assist")
+def ai_assist(body: AssistRequest, user: User = Depends(current_user)):
+    if not ai_enabled():
+        raise HTTPException(503, "AI Assist is not configured on this server")
+    if not body.text.strip():
+        raise HTTPException(422, "Select some text first")
+    try:
+        return {"result": run_action(body.action, body.text)}
+    except AIError as e:
+        raise HTTPException(502, str(e))
+
+
+# ---------- Serve the built React app (production) ----------
+# API routes above take priority; everything else serves the frontend.
+from fastapi.staticfiles import StaticFiles
+
+for candidate in (Path(__file__).parent / "static", Path(__file__).parent.parent / "frontend" / "dist"):
+    if candidate.is_dir():
+        app.mount("/", StaticFiles(directory=candidate, html=True), name="frontend")
+        break

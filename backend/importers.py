@@ -42,4 +42,3 @@ def file_to_html(filename: str, data: bytes) -> str:
     return "".join(
         f"<p>{html.escape(p).replace(chr(10), '<br>')}</p>" for p in paragraphs if p
     )
-    
