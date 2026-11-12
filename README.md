@@ -2,7 +2,7 @@
 
 A lightweight collaborative document editor inspired by Google Docs. Users can create and edit rich-text documents, import files, share documents with other users, and use AI Assist to improve their writing.
 
-**Live app:** https://YOUR-APP.onrender.com  *(free tier: the first load after idle can take ~50 seconds while the server wakes up)*
+**Live app:** https://ajaia-docs-gyu6.onrender.com *(free tier: the first load after idle can take ~50 seconds while the server wakes up)*
 
 ---
 
