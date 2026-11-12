@@ -47,26 +47,36 @@ FastAPI (Render, Docker) ──► Neon Postgres (users, documents, shares)
 
 # AI Workflow Note
 
-## Tools I used
-- **Claude (chat):** planning the scope, generating the first version of the backend, frontend, tests, Dockerfile and docs, and debugging errors step by step.
-- **Groq API (openai/gpt-oss-120b):** powers the AI Assist feature inside the product.
-- **GitHub Codespaces:** dev environment (my laptop ran out of disk space, so I moved to a cloud environment).
+## How I worked
+I owned the product decisions, setup, integration, testing and deployment, and used AI as a pair programmer to move faster on drafting code and docs.
 
-## Where AI materially sped up my work
-- **Scaffolding:** FastAPI models and routes, the TipTap editor setup and the toolbar came together in minutes, not hours.
-- **Test writing:** permission tests (viewer vs editor vs owner) and AI tests with a fake LLM function.
-- **Debugging:** reading error messages quickly (a failed virtualenv turned out to be a full disk; a 404 from Groq turned out to be a retired model).
-- **Docs:** first drafts of the README and this note.
+**What I drove myself**
+- **Scope and product decisions:** chose which features to build for the timebox, what to cut (real-time editing, real auth), and to add an AI-native feature inside the product.
+- **AI Assist feature:** decided to build AI into the editor and how it should behave: a preview before applying, plain-text insertion, input limits, and hiding the button when no key is set.
+- **Environment and deployment:** set up the project in GitHub Codespaces when my local machine ran out of disk space; set up Neon Postgres, Render (Docker), Groq, and all environment variables and secrets.
+- **Debugging and fixes:** traced AI Assist failures to a retired Groq model by testing the API directly, compared the available models, tested the replacement before switching, and made the model configurable. Also fixed a build failure caused by a file-name case mismatch.
+- **Testing and review:** ran the full user flow as each role (owner, editor, viewer) locally and on the live URL, checked error handling for bad uploads and empty titles, and verified secrets were never committed.
+- **Documentation and delivery:** edited all docs, chose the roadmap, took screenshots and recorded the walkthrough.
+
+## Where AI helped
+- **Tools:** Claude (chat) as a coding assistant; Groq API (`openai/gpt-oss-120b`) inside the product.
+- **Architecture:** talked through options and trade-offs before settling on FastAPI + React + Postgres in one Docker service.
+- **Code drafts:** first versions of API routes, permission checks, editor UI and styling, which I reviewed, ran, tested and adjusted.
+- **Tests and docs:** drafted test cases and first drafts of the README and notes.
 
 ## What I changed or rejected
-- **Storage format:** the first plan was to store TipTap JSON. I switched to HTML, because uploads (.md, .docx) convert naturally to HTML and TipTap cleans unsupported tags anyway.
-- **Database:** I didn't use SQLite in production. I chose Neon Postgres because Render's free tier wipes local files on restart.
-- **AI model:** the suggested model (`llama-3.3-70b-versatile`) had been retired by Groq. I listed the available models with the API, tested `openai/gpt-oss-120b` with a small script before switching, and made the model an env var so the next change won't need a code change.
-- **Bugs fixed during testing:** a component file named with the wrong case (`app.jsx` vs `App.jsx`) broke the build, and the AI result card scrolled out of view on long documents, so I made it sticky.
+- **Storage format:** switched from TipTap JSON to HTML, so uploaded files convert cleanly.
+- **Database:** chose Neon Postgres over SQLite because Render's free tier wipes local files.
+- **AI model:** replaced the retired model after testing alternatives; moved the model name into an env var.
+- **UX fix:** made the AI result card stay visible on long documents.
 
-## How I verified correctness and quality
-- **Automated tests:** 12 pytest tests run before each commit (access control, validation, import, AI behavior). The AI tests mock the model call, so they don't need network access or API credits.
-- **Manual end-to-end checks** on both local and the live URL: create → format → refresh → share → switch user → view-only check → upload → AI Assist.
-- **Security checks:** confirmed with `git status` that `.env` is never committed; API keys only live in Render environment variables; AI output is inserted as plain text.
-- **API checks:** `/api/health`, `/api/users` and `/api/ai/status` on the deployed app to confirm the database and AI were connected.
-- **UX review:** clicked through as each user role and checked error messages for bad uploads and empty titles.
+## How I verified quality
+- **12 automated tests** (access control, validation, file import, AI behavior with a mocked model).
+- **Manual end-to-end checks** on local and live: create → format → refresh → share → switch user → view-only → upload → AI Assist.
+- **Security:** API keys only in Render environment variables; `.env` excluded from git; AI output inserted as plain text.
+- **Deployment health checks:** `/api/health`, `/api/users`, `/api/ai/status`.
+
+## With more time
+- Real login with authentication (magic link or Google sign-in)
+- Download a document as .docx, .md or PDF
+- Frontend improvements: mobile layout, loading states, shortcuts panel
